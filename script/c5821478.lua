@@ -1,0 +1,71 @@
+--トポロジック・ボマー・ドラゴン
+function c5821478.initial_effect(c)
+	--link summon
+	aux.AddLinkProcedure(c,aux.FilterBoolFunctionEx(Card.IsType,TYPE_EFFECT),2)
+	c:EnableReviveLimit()
+	--damage
+	local e1=Effect.CreateEffect(c)
+	e1:SetDescription(aux.Stringid(5821478,0))
+	e1:SetCategory(CATEGORY_DESTROY)
+	e1:SetType(EFFECT_TYPE_FIELD+EFFECT_TYPE_TRIGGER_F)
+	e1:SetCode(EVENT_SPSUMMON_SUCCESS)
+	e1:SetRange(LOCATION_MZONE)
+	e1:SetCondition(c5821478.descon)
+	e1:SetTarget(c5821478.destg)
+	e1:SetOperation(c5821478.desop)
+	c:RegisterEffect(e1)
+	--damage
+	local e2=Effect.CreateEffect(c)
+	e2:SetDescription(aux.Stringid(5821478,1))
+	e2:SetCategory(CATEGORY_DAMAGE)
+	e2:SetType(EFFECT_TYPE_SINGLE+EFFECT_TYPE_TRIGGER_F)
+	e2:SetCode(EVENT_BATTLED)
+	e2:SetCondition(c5821478.damcon)
+	e2:SetTarget(c5821478.damtg)
+	e2:SetOperation(c5821478.damop)
+	c:RegisterEffect(e2)
+end
+function c5821478.descon(e,tp,eg,ep,ev,re,r,rp)
+    if eg:IsContains(e:GetHandler()) then return false end
+    for tc in aux.Next(Duel.GetMatchingGroup(Card.IsType,tp,LOCATION_MZONE,LOCATION_MZONE,nil,TYPE_LINK)) do
+        local lg=tc:GetLinkedGroup()
+        if #lg~=#(lg-eg) then return true end
+    end
+    return false
+end
+function c5821478.desfilter(c)
+	return c:GetSequence()<5
+end
+function c5821478.destg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	local g=Duel.GetMatchingGroup(c5821478.desfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	Duel.SetOperationInfo(0,CATEGORY_DESTROY,g,g:GetCount(),0,0)
+end
+function c5821478.desop(e,tp,eg,ep,ev,re,r,rp)
+	local g=Duel.GetMatchingGroup(c5821478.desfilter,tp,LOCATION_MZONE,LOCATION_MZONE,nil)
+	Duel.Destroy(g,REASON_EFFECT)
+	local e1=Effect.CreateEffect(e:GetHandler())
+	e1:SetType(EFFECT_TYPE_FIELD)
+	e1:SetCode(EFFECT_CANNOT_ATTACK)
+	e1:SetTargetRange(LOCATION_MZONE,0)
+	e1:SetTarget(c5821478.ftarget)
+	e1:SetLabel(e:GetHandler():GetFieldID())
+	e1:SetReset(RESET_PHASE+PHASE_END)
+	Duel.RegisterEffect(e1,tp)
+end
+function c5821478.ftarget(e,c)
+	return e:GetLabel()~=c:GetFieldID()
+end
+function c5821478.damcon(e,tp,eg,ep,ev,re,r,rp)
+	return not e:GetHandler():IsStatus(STATUS_BATTLE_DESTROYED) and Duel.GetAttacker()==e:GetHandler() and Duel.GetAttackTarget()
+end
+function c5821478.damtg(e,tp,eg,ep,ev,re,r,rp,chk)
+	if chk==0 then return true end
+	Duel.SetOperationInfo(0,CATEGORY_DAMAGE,nil,0,1-tp,Duel.GetAttackTarget():GetBaseAttack())
+end
+function c5821478.damop(e,tp,eg,ep,ev,re,r,rp)
+	local bc=Duel.GetAttackTarget()
+	if bc and bc:IsRelateToBattle() and bc:IsFaceup() then
+		Duel.Damage(1-tp,bc:GetBaseAttack(),REASON_EFFECT)
+	end
+end
